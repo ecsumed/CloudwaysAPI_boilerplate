@@ -29,12 +29,7 @@ class CloudwaysAPIClient {
                  'app_id' => $app_id
                 ];
 
-        $qry_str = "?";
-        foreach ($data as $name => $value) {
-            $qry_str .= urlencode($name) . '=' . urlencode($value) . '&';
-        }
-
-        return $this->request('GET', '/app/manage/cronList'. $qry_str);
+        return $this->request('GET', '/app/manage/cronList', $data);
     }
 
     function service_varnish($server_id, $action) { 
@@ -59,27 +54,26 @@ class CloudwaysAPIClient {
         $this->accessToken = $response->access_token;
     }
 
-    function request($method, $url, $post = []) {
+    function request($method, $url, $data = []) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        // Set GET Params
+        if ($method == 'GET' && count($data)) {
+            $url = $this->_GET_data($data, $url);
+        }
+        //Set POST Params
+        if ($method == 'POST' && count($data)) {
+            $ch = $this->_POST_data($data, $ch);
+        }
+
         curl_setopt($ch, CURLOPT_URL, self::API_URL . $url);
-           
         do {
             if ($this->accessToken) {
                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $this->accessToken]);
             }
      
-            //Set Post Parameters
-            $encoded = '';
-            if (count($post)) {
-                foreach ($post as $name => $value) {
-                    $encoded .= urlencode($name) . '=' . urlencode($value) . '&';
-                }
-                $encoded = substr($encoded, 0, strlen($encoded) - 1);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $encoded);
-                curl_setopt($ch, CURLOPT_POST, 1);
-            }
             $output = curl_exec($ch);
             $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             
@@ -94,6 +88,26 @@ class CloudwaysAPIClient {
         }
         curl_close($ch);
         return json_decode($output);
+    }
+
+    function _GET_data($data, $url) {
+        $qry_str = "?";
+        foreach ($data as $name => $value) {
+            $qry_str .= urlencode($name) . '=' . urlencode($value) . '&';
         }
-    } 
+        $url .= $qry_str;
+        return $url;
+    }
+    
+    function _POST_data($data, $ch) {
+        $encoded = '';
+        foreach ($data as $name => $value) {
+            $encoded .= urlencode($name) . '=' . urlencode($value) . '&';
+        }
+        $encoded = substr($encoded, 0, strlen($encoded) - 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $encoded);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        return $ch;
+    }
+} 
 ?>
