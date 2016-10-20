@@ -31,6 +31,14 @@ class CloudwaysAPIClient {
 
         return $this->request('GET', '/app/manage/cronList', $data);
     }
+    
+    function get_server_sizes() { 
+        $response = $this->request('GET', '/server_sizes');
+        if ($response->status === true) {
+            return $response->sizes;
+        }
+        return false;
+    }
 
     function service_varnish($server_id, $action) { 
         $actions = ['enable', 'disable', 'purge'];
@@ -43,6 +51,14 @@ class CloudwaysAPIClient {
             return $this->request('POST', '/service/varnish', $data);
         } 
         return false;
+    }
+    
+    function scale_server($server_id, $instance_type) { 
+        $data = ['server_id' => $server_id,
+                 'instance_type' => $instance_type
+                ];
+
+        return $this->request('POST', '/server/scaleServer', $data);
     }
 
     function prepare_access_token() { 
