@@ -34,10 +34,7 @@ class CloudwaysAPIClient {
     
     function get_server_sizes() { 
         $response = $this->request('GET', '/server_sizes');
-        if ($response->status === true) {
-            return $response->sizes;
-        }
-        return false;
+    return $response->sizes;
     }
 
     function service_varnish($server_id, $action) { 
